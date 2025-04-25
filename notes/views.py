@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 from django.views.generic.edit import DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .forms import NotesForm
 from .models import Notes
@@ -18,28 +19,51 @@ def add_like_view(reqeust, pk):
         raise Http404
 
 
-class NotesDeleteView(DeleteView):
+def change_visibility_view(reqeust, pk):
+    if reqeust.method == "POST":
+        note = get_object_or_404(Notes, pk=pk)
+        note.is_public = not note.is_public
+        note.save()
+        return HttpResponseRedirect(reverse("notes.detail", args=(pk,)))
+    else:
+        raise Http404
+
+
+class NotesDeleteView(LoginRequiredMixin, DeleteView):
     model = Notes
     success_url = "/smart/notes"
     template_name = "notes/notes_delete.html"
+    login_url = "/admin"
 
 
-class NotesUpdateView(UpdateView):
+class NotesUpdateView(LoginRequiredMixin, UpdateView):
     model = Notes
     success_url = "/smart/notes"
     form_class = NotesForm
+    login_url = "/admin"
 
 
-class NotesCreateView(CreateView):
+class NotesCreateView(LoginRequiredMixin, CreateView):
     model = Notes
     success_url = "/smart/notes"
     form_class = NotesForm
+    login_url = "/admin"
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.save()
+        return HttpResponseRedirect(self.get_success_url())
 
 
-class NotesListView(ListView):
+class NotesListView(LoginRequiredMixin, ListView):
     model = Notes
     context_object_name = "notes"
     template_name = "notes/notes_list.html"
+    login_url = "/admin"
+
+    def get_queryset(self):
+        return self.request.user.notes.all()
 
 
 class PopularNotesListView(ListView):
