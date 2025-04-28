@@ -3,12 +3,13 @@ version: '3.8'
 services:
   postgres-primary:
     image: bitnami/postgresql-repmgr:latest
+    restart: always
     environment:
       - POSTGRESQL_POSTGRES_PASSWORD=postgres_password
       - POSTGRESQL_USERNAME=my_user
       - POSTGRESQL_PASSWORD=my_password
       - POSTGRESQL_DATABASE=my_database
-      - REPMGR_PRIMARY_ROLE=true
+      - REPMGR_PRIMARY_ROLE=yes
       - REPMGR_PARTNER_NODES=postgres-primary,postgres-replica
       - REPMGR_NODE_NAME=postgres-primary-0
       - REPMGR_NODE_NETWORK_NAME=postgres-primary
@@ -18,11 +19,19 @@ services:
       - REPMGR_PRIMARY_HOST=postgres-primary
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data_primary:/bitnami/postgresql
+    entrypoint: >
+      bash -c "
+      rm -f /tmp/repmgrd.pid;
+      /opt/bitnami/scripts/postgresql-repmgr/entrypoint.sh /opt/bitnami/scripts/postgresql-repmgr/run.sh
+      "
     networks:
       - postgres-net
 
   postgres-replica:
     image: bitnami/postgresql-repmgr:latest
+    restart: always
     depends_on:
       - postgres-primary
     environment:
@@ -30,6 +39,7 @@ services:
       - POSTGRESQL_USERNAME=my_user
       - POSTGRESQL_PASSWORD=my_password
       - POSTGRESQL_DATABASE=my_database
+      - REPMGR_PRIMARY_ROLE=no
       - REPMGR_PARTNER_NODES=postgres-primary,postgres-replica
       - REPMGR_NODE_NAME=postgres-replica-0
       - REPMGR_NODE_NETWORK_NAME=postgres-replica
@@ -40,8 +50,14 @@ services:
       - REPMGR_PRIMARY_PORT=5432
     ports:
       - "6543:5432"
+    volumes:
+      - postgres_data_replica:/bitnami/postgresql
     networks:
       - postgres-net
+
+volumes:
+  postgres_data_primary:
+  postgres_data_replica:
 
 networks:
   postgres-net:
