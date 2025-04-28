@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres-primary:
+    image: bitnami/postgresql-repmgr:latest
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=postgres_password
+      - POSTGRESQL_USERNAME=my_user
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_DATABASE=my_database
+      - REPMGR_PRIMARY_ROLE=true
+      - REPMGR_PARTNER_NODES=postgres-primary,postgres-replica
+      - REPMGR_NODE_NAME=postgres-primary-0
+      - REPMGR_NODE_NETWORK_NAME=postgres-primary
+      - REPMGR_NODE_ID=1001
+      - REPMGR_USERNAME=repmgr
+      - REPMGR_PASSWORD=repmgr_password
+      - REPMGR_PRIMARY_HOST=postgres-primary
+    ports:
+      - "5432:5432"
+    networks:
+      - postgres-net
+
+  postgres-replica:
+    image: bitnami/postgresql-repmgr:latest
+    depends_on:
+      - postgres-primary
+    environment:
+      - POSTGRESQL_POSTGRES_PASSWORD=postgres_password
+      - POSTGRESQL_USERNAME=my_user
+      - POSTGRESQL_PASSWORD=my_password
+      - POSTGRESQL_DATABASE=my_database
+      - REPMGR_PARTNER_NODES=postgres-primary,postgres-replica
+      - REPMGR_NODE_NAME=postgres-replica-0
+      - REPMGR_NODE_NETWORK_NAME=postgres-replica
+      - REPMGR_NODE_ID=1002
+      - REPMGR_USERNAME=repmgr
+      - REPMGR_PASSWORD=repmgr_password
+      - REPMGR_PRIMARY_HOST=postgres-primary
+      - REPMGR_PRIMARY_PORT=5432
+    ports:
+      - "6543:5432"
+    networks:
+      - postgres-net
+
+networks:
+  postgres-net:
