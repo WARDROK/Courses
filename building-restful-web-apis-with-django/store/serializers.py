@@ -23,10 +23,10 @@ class ProductSerializer(serializers.ModelSerializer):
         max_value=100000,
         max_digits=None,
         decimal_places=2,
-        coerce_to_string=False,
     )
     # price = serializers.FloatField(min_value=1.00, max_value=100000)
     sale_start = serializers.DateTimeField(
+        required=False,
         input_formats=["%I:%M %p %d %B %Y"],
         format=None,
         allow_null=True,
@@ -34,6 +34,7 @@ class ProductSerializer(serializers.ModelSerializer):
         style={"input_type": "text", "placeholder": "12:01 PM 28 July 2019"},
     )
     sale_end = serializers.DateTimeField(
+        required=False,
         input_formats=["%I:%M %p %d %B %Y"],
         format=None,
         allow_null=True,
@@ -64,14 +65,16 @@ class ProductSerializer(serializers.ModelSerializer):
         return CartItemSerializer(items, many=True).data
 
     def update(self, instance, validated_data):
+        warranty_file = validated_data.pop("warranty", None)
         instance = super().update(instance, validated_data)
 
-        if validated_data.get("warranty", None):
+        if warranty_file:
             instance.description += "\n\nWarranty Information:\n"
             instance.description += b"; ".join(
-                validated_data["warranty"].readlines()
+                warranty_file.readlines()
             ).decode()
             instance.save()
+
         return instance
 
     def create(self, validated_data):

@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 import os
-from os import getenv
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -70,7 +70,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'demo.wsgi.application'
 
-DATABASE_ROUTERS = ['db_routers.PrimaryReplicaRouter']
+if "test" in sys.argv:
+    DATABASE_ROUTERS = []
+else:
+    DATABASE_ROUTERS = ['db_routers.PrimaryReplicaRouter']
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 DATABASES = {
